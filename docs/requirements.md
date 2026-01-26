@@ -27,10 +27,10 @@ El sistema permite registro e inicio de sesión con email y contraseña.
 
 ### RF2: Creación de Landing Page
 
-Cada usuario autenticado crea **una única landing page** asociada a su cuenta.
+Un usuario autenticado puede crear **múltiples landing pages**, cada una con su propio slug único.
 
-- **RF2.1** - Un usuario = una landing page (relación 1:1)
-- **RF2.2** - Slug único automático (3-50 caracteres, alfanumérico + guiones)
+- **RF2.1** - Un usuario puede tener N landings (relación 1:N)
+- **RF2.2** - Slug único generado automáticamente (3-50 caracteres, alfanumérico + guiones)
 - **RF2.3** - Campos: nombres de pareja, fecha de aniversario, bio
 - **RF2.4** - Selección de tema base al crear
 - **RF2.5** - Estado: draft o published
@@ -107,7 +107,7 @@ Visitantes acceden a landings publicadas.
 
 - **RNF2.1** - Cumplimiento de Tercera Forma Normal
 - **RNF2.2** - Tablas: Users, Landings, Themes, Media
-- **RNF2.3** - Relaciones: 1:1 (User-Landing), M:1 (Landing-Theme), 1:N (Landing-Media)
+- **RNF2.3** - Relaciones definidas: 1:N (User-Landing), M:1 (Landing-Theme), 1:N (Landing-Media)
 - **RNF2.4** - Índices en: slug, user_id, theme_id
 - **RNF2.5** - Soft delete en Users y Landings
 

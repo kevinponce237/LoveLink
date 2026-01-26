@@ -12,6 +12,8 @@ Documento que define las entidades, relaciones y conceptos fundamentales del pro
 4. [Relaciones](#relaciones)
 5. [Reglas de Negocio](#reglas-de-negocio)
 
+> **Nota:** Para casos de uso ver [use-cases.md](use-cases.md) y diagramas de clases en [class-diagram.md](class-diagram.md)
+
 ---
 
 ## Descripción del Dominio
@@ -57,7 +59,7 @@ Página conmemorativa asociada a un usuario.
 | Campo | Tipo | Restricción |
 |-------|------|------------|
 | `id` | INT | PK, AUTO_INCREMENT |
-| `user_id` | INT | FK → Users (UNIQUE, 1:1) |
+| `user_id` | INT | FK → Users (NOT NULL) |
 | `theme_id` | INT | FK → Themes (NOT NULL) |
 | `slug` | VARCHAR(50) | UNIQUE, NOT NULL |
 | `couple_names` | VARCHAR(200) | NOT NULL |
@@ -70,7 +72,7 @@ Página conmemorativa asociada a un usuario.
 
 **Restricciones:**
 - Slug: 3-50 caracteres, alfanuméricos + guiones, único
-- `user_id` UNIQUE → Un usuario = una landing
+- `user_id` (NO UNIQUE) → Un usuario puede tener múltiples landings
 - Validación de slug: no caracteres especiales
 
 ---
@@ -145,14 +147,14 @@ Imágenes asociadas a una landing.
 │ deleted_at (soft delete)       │
 └────────────────────────────────┘
            │
-           │ 1:1 (user_id UNIQUE)
+           │ 1:N (user_id)
            │ ON DELETE CASCADE
            │
 ┌────────────────────────────────────────────┐
 │          LANDINGS                          │
 ├────────────────────────────────────────────┤
 │ id (PK)                                    │
-│ user_id (FK, UNIQUE)                       │
+│ user_id (FK)                               │
 │ theme_id (FK) ─────────────┐               │
 │ slug (UNIQUE)              │               │
 │ couple_names               │               │
@@ -207,17 +209,17 @@ Imágenes asociadas a una landing.
 
 ## Relaciones
 
-### User ↔ Landing (1:1)
+### User ↔ Landing (1:N)
 
-- Un usuario tiene exactamente una landing
-- `user_id` en tabla `landings` es UNIQUE
-- ON DELETE CASCADE: Al borrar usuario, se borra landing
+- Un usuario puede tener múltiples landings
+- Cada landing pertenece a un usuario
+- ON DELETE CASCADE: Al borrar usuario, se borran todas sus landings
 
 ```php
 // User.php
-public function landing(): HasOne
+public function landings(): HasMany
 {
-    return $this->hasOne(Landing::class);
+    return $this->hasMany(Landing::class);
 }
 
 // Landing.php
@@ -298,15 +300,16 @@ Ejemplo:
 
 ---
 
-### RN2: Un Usuario = Una Landing
+### RN2: Un Usuario Puede Tener Múltiples Landings
 
-Cada usuario autenticado puede crear **solo una landing page**.
+Cada usuario autenticado puede crear **múltiples landing pages**.
 
 ```
-Validación:
-- Al crear landing, verificar que user->landing sea null
-- Implementar en LandingService::createNewLanding()
-- Lanzar UserAlreadyHasLandingException si existe
+Implementación:
+- user_id en landings NO es UNIQUE
+- Cada landing tiene su propio slug único
+- Un usuario puede gestionar varias landings
+- Validación en LandingService::createNewLanding()
 ```
 
 ---
