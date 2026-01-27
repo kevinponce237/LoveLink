@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Media extends Model
@@ -11,24 +12,15 @@ class Media extends Model
     use HasFactory;
 
     /**
-     * Los timestamps que usa este modelo
-     */
-    public $timestamps = false;
-
-    protected $dates = ['created_at'];
-
-    /**
-     * Nombre de la tabla
-     */
-    protected $table = 'media';
-
-    /**
      * Los atributos que se pueden asignar masivamente
      */
     protected $fillable = [
-        'file_path',
-        'type',
-        'file_size',
+        'user_id',
+        'filename',
+        'path',
+        'mime_type',
+        'size',
+        'url',
     ];
 
     /**
@@ -37,9 +29,18 @@ class Media extends Model
     protected function casts(): array
     {
         return [
-            'file_size' => 'integer',
+            'size' => 'integer',
             'created_at' => 'datetime',
+            'updated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Relación: Media pertenece a un usuario
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
@@ -61,11 +62,19 @@ class Media extends Model
     }
 
     /**
+     * Relación: Media puede ser usado como imagen de fondo de temas
+     */
+    public function themes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Theme::class, 'bg_image_media_id');
+    }
+
+    /**
      * Verifica si el archivo es una imagen válida
      */
-    public function isValidMedia(): bool
+    public function isValidImage(): bool
     {
-        return in_array($this->type, ['image', 'gif']);
+        return str_starts_with($this->mime_type, 'image/');
     }
 
     /**
@@ -73,14 +82,30 @@ class Media extends Model
      */
     public function getFileSizeInMb(): float
     {
-        return round($this->file_size / 1024 / 1024, 2);
+        return round($this->size / 1024 / 1024, 2);
     }
 
     /**
-     * Scope para filtrar por tipo
+     * Scope para filtrar por tipo MIME
      */
-    public function scopeByType($query, string $type)
+    public function scopeByMimeType($query, string $mimeType)
     {
-        return $query->where('type', $type);
+        return $query->where('mime_type', $mimeType);
+    }
+
+    /**
+     * Scope para filtrar por usuario
+     */
+    public function scopeForUser($query, int $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope para imágenes solamente
+     */
+    public function scopeImages($query)
+    {
+        return $query->where('mime_type', 'like', 'image/%');
     }
 }
