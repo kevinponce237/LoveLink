@@ -570,6 +570,301 @@ Organización conceptual de la API REST siguiendo la arquitectura **Controller �
 
 ---
 
+## 🧪 Testing
+
+### 🎯 Estrategia de Testing
+
+**Principios Generales:**
+- **Feature Tests** para todos los endpoints
+- **Validación de códigos HTTP** apropiados para cada escenario
+- **Tests de autorización** para operaciones protegidas
+- **Tests de validación** para FormRequests
+- **Tests de Storage** para operaciones de media
+
+### 📋 Tests por Entidad
+
+### 🔐 AuthControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_login_with_valid_credentials()` - POST `/api/auth/login`
+- `test_user_can_register_with_valid_data()` - POST `/api/auth/register`
+- `test_authenticated_user_can_logout()` - POST `/api/auth/logout`
+- `test_authenticated_user_can_get_profile()` - GET `/api/auth/user`
+
+**Tests de Error:**
+- `test_login_fails_with_invalid_credentials()` - 422 Unprocessable Entity
+- `test_login_requires_email_and_password()` - 422 Validation Errors
+- `test_register_fails_with_duplicate_email()` - 422 Email already taken
+- `test_register_requires_valid_email_format()` - 422 Validation Errors
+- `test_logout_requires_authentication()` - 401 Unauthorized
+- `test_get_user_requires_authentication()` - 401 Unauthorized
+
+### 🎨 ThemeControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_list_available_themes()` - GET `/api/themes`
+- `test_user_can_create_custom_theme()` - POST `/api/themes`
+- `test_user_can_view_theme_details()` - GET `/api/themes/{id}`
+- `test_user_can_update_own_theme()` - PUT `/api/themes/{id}`
+- `test_user_can_delete_own_theme()` - DELETE `/api/themes/{id}`
+
+**Tests de Error:**
+- `test_theme_creation_requires_authentication()` - 401 Unauthorized
+- `test_theme_creation_validates_required_fields()` - 422 Validation Errors
+- `test_theme_creation_validates_hex_color_format()` - 422 Invalid color format
+- `test_user_cannot_update_system_theme()` - 403 Forbidden
+- `test_user_cannot_update_other_user_theme()` - 403 Forbidden
+- `test_theme_not_found_returns_404()` - 404 Not Found
+
+### 🏠 LandingControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_list_own_landings()` - GET `/api/landings`
+- `test_user_can_create_landing_with_auto_slug()` - POST `/api/landings`
+- `test_user_can_create_landing_with_custom_slug()` - POST `/api/landings`
+- `test_anyone_can_view_landing_by_id()` - GET `/api/landings/{id}` (PÚBLICO)
+- `test_anyone_can_view_landing_by_slug()` - GET `/api/landings/{slug}` (PÚBLICO)
+- `test_user_can_update_own_landing()` - PUT `/api/landings/{id}`
+- `test_user_can_delete_own_landing()` - DELETE `/api/landings/{id}`
+
+**Tests de Error:**
+- `test_landing_creation_requires_authentication()` - 401 Unauthorized
+- `test_landing_creation_validates_required_fields()` - 422 Validation Errors
+- `test_landing_creation_validates_theme_exists()` - 422 Invalid theme_id
+- `test_landing_creation_validates_unique_slug_per_user()` - 422 Slug taken
+- `test_user_cannot_update_other_user_landing()` - 403 Forbidden
+- `test_user_cannot_delete_other_user_landing()` - 403 Forbidden
+- `test_landing_not_found_returns_404()` - 404 Not Found
+
+### 🏠 LandingMediaControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_attach_media_to_own_landing()` - POST `/api/landings/{id}/media`
+- `test_user_can_detach_media_from_own_landing()` - DELETE `/api/landings/{id}/media/{mediaId}`
+- `test_user_can_reorder_landing_media()` - PUT `/api/landings/{id}/media/reorder`
+
+**Tests de Error:**
+- `test_media_attachment_requires_authentication()` - 401 Unauthorized
+- `test_user_cannot_attach_media_to_other_user_landing()` - 403 Forbidden
+- `test_cannot_attach_non_existent_media()` - 422 Invalid media_id
+- `test_cannot_attach_media_beyond_limit()` - 422 Media limit exceeded (20)
+- `test_cannot_attach_other_user_media()` - 403 Forbidden
+- `test_media_reorder_validates_media_belongs_to_landing()` - 422 Invalid media
+
+### 📁 MediaControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_list_accessible_media()` - GET `/api/media`
+- `test_user_can_upload_valid_image()` - POST `/api/media`
+- `test_user_can_delete_unused_media()` - DELETE `/api/media/{id}`
+
+**Tests de Error:**
+- `test_media_operations_require_authentication()` - 401 Unauthorized
+- `test_media_upload_validates_file_type()` - 422 Invalid file type
+- `test_media_upload_validates_file_size()` - 422 File too large (>10MB)
+- `test_media_upload_requires_file()` - 422 File required
+- `test_cannot_delete_media_in_use()` - 422 Media is linked to entities
+- `test_user_cannot_delete_other_user_media()` - 403 Forbidden
+- `test_media_not_found_returns_404()` - 404 Not Found
+
+### 💌 InvitationControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_list_own_invitations()` - GET `/api/invitations`
+- `test_user_can_create_invitation_with_title()` - POST `/api/invitations`
+- `test_user_can_create_invitation_with_custom_slug()` - POST `/api/invitations`
+- `test_anyone_can_view_invitation_by_id()` - GET `/api/invitations/{id}` (PÚBLICO)
+- `test_anyone_can_view_invitation_by_slug()` - GET `/api/invitations/{slug}` (PÚBLICO)
+- `test_user_can_update_own_invitation()` - PUT `/api/invitations/{id}`
+- `test_user_can_soft_delete_own_invitation()` - DELETE `/api/invitations/{id}`
+
+**Tests de Error:**
+- `test_invitation_creation_requires_authentication()` - 401 Unauthorized
+- `test_invitation_creation_requires_title()` - 422 Title required
+- `test_invitation_creation_validates_slug_uniqueness()` - 422 Slug taken
+- `test_user_cannot_update_other_user_invitation()` - 403 Forbidden
+- `test_user_cannot_delete_other_user_invitation()` - 403 Forbidden
+- `test_invitation_not_found_returns_404()` - 404 Not Found
+
+### 💌 InvitationMediaControllerTest
+
+**Tests Exitosos (200/201):**
+- `test_user_can_attach_media_to_own_invitation()` - POST `/api/invitations/{id}/media`
+- `test_user_can_detach_media_from_own_invitation()` - DELETE `/api/invitations/{id}/media/{mediaId}`
+
+**Tests de Error:**
+- `test_media_attachment_requires_authentication()` - 401 Unauthorized
+- `test_user_cannot_attach_media_to_other_user_invitation()` - 403 Forbidden
+- `test_cannot_attach_non_existent_media()` - 422 Invalid media_id
+- `test_cannot_attach_media_beyond_limit()` - 422 Media limit exceeded (20)
+- `test_cannot_attach_other_user_media()` - 403 Forbidden
+
+### 🌐 PublicControllerTest
+
+**Tests Exitosos (200):**
+- `test_public_can_view_landing_by_slug()` - GET `/api/public/landing/{slug}`
+- `test_public_can_view_invitation_by_slug()` - GET `/api/public/invitation/{slug}`
+
+**Tests de Error:**
+- `test_public_landing_not_found_returns_404()` - 404 Not Found
+- `test_public_invitation_not_found_returns_404()` - 404 Not Found
+
+### 📂 Organización de Tests
+
+```
+tests/
+├── Feature/
+│   ├── Auth/
+│   │   └── AuthControllerTest.php
+│   ├── Themes/
+│   │   └── ThemeControllerTest.php
+│   ├── Landings/
+│   │   ├── LandingControllerTest.php
+│   │   └── LandingMediaControllerTest.php
+│   ├── Media/
+│   │   └── MediaControllerTest.php
+│   ├── Invitations/
+│   │   ├── InvitationControllerTest.php
+│   │   └── InvitationMediaControllerTest.php
+│   └── Public/
+│       └── PublicControllerTest.php
+├── Unit/
+│   ├── Services/
+│   │   ├── MediaServiceTest.php
+│   │   ├── LandingServiceTest.php
+│   │   └── InvitationServiceTest.php
+│   └── Repositories/
+│       ├── MediaRepositoryTest.php
+│       ├── LandingRepositoryTest.php
+│       └── InvitationRepositoryTest.php
+└── TestCase.php
+```
+
+### 🔧 Configuración de Storage
+
+**Storage de Laravel para Media:**
+
+```php
+// config/filesystems.php
+'disks' => [
+    'media' => [
+        'driver' => env('MEDIA_STORAGE_DRIVER', 'local'),
+        'root' => storage_path('app/public/media'),
+        'url' => env('APP_URL').'/storage/media',
+        'visibility' => 'public',
+    ],
+    
+    'media_cloud' => [
+        'driver' => 's3',
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION'),
+        'bucket' => env('AWS_BUCKET'),
+        'url' => env('AWS_URL'),
+        'endpoint' => env('AWS_ENDPOINT'),
+        'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+    ],
+]
+```
+
+**Configuración Flexible via .env:**
+
+```bash
+# Configuración Local (Desarrollo)
+MEDIA_STORAGE_DRIVER=local
+MEDIA_DISK=media
+
+# Configuración Cloud (Producción)
+MEDIA_STORAGE_DRIVER=s3
+MEDIA_DISK=media_cloud
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=your-bucket-name
+AWS_URL=https://your-bucket.s3.amazonaws.com
+```
+
+**Implementación en MediaService:**
+
+```php
+// app/Services/MediaService.php
+class MediaService
+{
+    protected $disk;
+    
+    public function __construct()
+    {
+        $this->disk = Storage::disk(config('filesystems.media_disk', 'media'));
+    }
+    
+    public function uploadMedia(UploadedFile $file, int $userId): Media
+    {
+        $path = $this->generateFilePath($file);
+        
+        // Storage automáticamente usará el driver configurado
+        $storedPath = $this->disk->putFileAs(
+            "users/{$userId}", 
+            $file, 
+            $path
+        );
+        
+        return $this->mediaRepository->create([
+            'user_id' => $userId,
+            'filename' => $file->getClientOriginalName(),
+            'path' => $storedPath,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'url' => $this->disk->url($storedPath)
+        ]);
+    }
+    
+    public function deleteMedia(int $mediaId, int $userId): bool
+    {
+        $media = $this->mediaRepository->findById($mediaId);
+        
+        if (!$media || $media->user_id !== $userId) {
+            return false;
+        }
+        
+        // Eliminar archivo del storage
+        $this->disk->delete($media->path);
+        
+        // Eliminar registro de base de datos
+        return $this->mediaRepository->delete($mediaId);
+    }
+}
+```
+
+**Beneficios de esta Configuración:**
+
+1. **Flexibilidad de Deployment:**
+   - Desarrollo: archivos locales en `storage/app/public/media`
+   - Producción: AWS S3, Google Cloud Storage, etc.
+
+2. **Cambio Sin Código:**
+   - Solo modificar variables de entorno
+   - No tocar código de la aplicación
+
+3. **Testing:**
+   - Tests usan `fake()` disk para no crear archivos reales
+   - Storage se resetea entre tests
+
+4. **URLs Automáticas:**
+   - Laravel genera URLs apropiadas según el driver
+   - Local: `http://app.test/storage/media/file.jpg`
+   - S3: `https://bucket.s3.amazonaws.com/users/1/file.jpg`
+
+### 🧪 Tests de Storage
+
+**MediaStorageTest.php:**
+- `test_can_upload_file_to_configured_disk()`
+- `test_can_delete_file_from_disk()`
+- `test_generates_correct_urls_for_storage_driver()`
+- `test_respects_user_directory_structure()`
+- `test_handles_storage_failures_gracefully()`
+
+---
+
 ## ✅ Criterios de Completitud
 
 ### Por cada entidad debe tener:
