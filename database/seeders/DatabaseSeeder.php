@@ -13,9 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Crear la configuración del sistema primero
         $this->call([
-            SystemControlSeeder::class,
             ThemeSeeder::class,
         ]);
 
