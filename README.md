@@ -160,7 +160,10 @@ Edita `.env` y configura:
 - `APP_NAME`, `APP_URL`, `APP_DEBUG`
 - `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`
 - `MAIL_*` (si usas correo)
-- `AWS_*` (si usas S3 para imágenes)
+- **Digital Ocean Spaces** (para almacenamiento de media):
+  - `AWS_ACCESS_KEY_ID`: Tu Access Key de DO Spaces
+  - `AWS_SECRET_ACCESS_KEY`: Tu Secret Key de DO Spaces
+  - `MEDIA_STORAGE_DRIVER=s3` (para producción) o `local` (para desarrollo)
 
 #### 5. Generar Clave de Aplicación
 
@@ -198,6 +201,43 @@ La aplicación estará disponible en `http://localhost:8000`.
 
 ---
 
+## 🌐 Almacenamiento de Media (Digital Ocean Spaces)
+
+El proyecto está configurado para usar **Digital Ocean Spaces** (Amsterdam) para almacenamiento de imágenes en producción, con fallback local para desarrollo.
+
+### Configuración de Producción
+
+```bash
+# En .env para producción:
+MEDIA_STORAGE_DRIVER=s3
+AWS_ACCESS_KEY_ID=tu_do_spaces_access_key
+AWS_SECRET_ACCESS_KEY=tu_do_spaces_secret_key
+AWS_BUCKET=uspage-storage
+```
+
+### Configuración de Desarrollo
+
+```bash
+# En .env para desarrollo:
+MEDIA_STORAGE_DRIVER=local
+```
+
+### ¿Por qué Amsterdam?
+
+- ✅ **Latencia óptima**: ~20-30ms desde España
+- ✅ **Conectividad LATAM**: Excelentes rutas a América Latina
+- ✅ **Compliance EU**: Cumple con GDPR
+- ✅ **Costo-efectivo**: Mejor precio que AWS S3
+
+### Características
+
+- **Límite por imagen**: 10MB máximo
+- **Formatos soportados**: JPG, PNG, WebP, GIF
+- **CDN automático**: URLs optimizadas globalmente
+- **Backup automático**: Digital Ocean maneja redundancia
+
+---
+
 ## 📝 Comandos Útiles
 
 ### Laravel (Backend)
@@ -229,6 +269,13 @@ vendor/bin/pint
 
 # Ejecutar Tinker (REPL interactivo)
 php artisan tinker
+
+# Crear enlace simbólico para storage público (solo desarrollo)
+php artisan storage:link
+
+# Test de conectividad con Digital Ocean Spaces
+php artisan tinker
+# Dentro de tinker: Storage::disk('media_cloud')->put('test.txt', 'Hello DO!');
 ```
 
 ### Frontend (Node.js)
