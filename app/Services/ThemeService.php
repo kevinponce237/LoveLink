@@ -6,11 +6,13 @@ use App\Models\Theme;
 use App\Models\User;
 use App\Repositories\ThemeRepository;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 
 class ThemeService
 {
     public function __construct(
-        protected ThemeRepository $themeRepository
+        protected ThemeRepository $themeRepository,
+        protected MediaService $mediaService
     ) {}
 
     /**
@@ -29,11 +31,19 @@ class ThemeService
      * 
      * @param User $user
      * @param array $data
+     * @param UploadedFile|null $backgroundImage
      * @return Theme
      */
-    public function createUserTheme(User $user, array $data): Theme
+    public function createUserTheme(User $user, array $data, ?UploadedFile $backgroundImage = null): Theme
     {
         $data['user_id'] = $user->id;
+        
+        // Si hay imagen de fondo, subirla primero
+        if ($backgroundImage) {
+            $media = $this->mediaService->uploadThemeBackgroundImage($backgroundImage, $user->id);
+            $data['bg_image_media_id'] = $media->id;
+            $data['bg_image_url'] = $media->url;
+        }
         
         return $this->themeRepository->create($data);
     }
@@ -44,10 +54,11 @@ class ThemeService
      * @param int $themeId
      * @param array $data
      * @param User $user
+     * @param UploadedFile|null $backgroundImage
      * @return Theme
      * @throws \Exception
      */
-    public function updateTheme(int $themeId, array $data, User $user): Theme
+    public function updateTheme(int $themeId, array $data, User $user, ?UploadedFile $backgroundImage = null): Theme
     {
         $theme = $this->themeRepository->findById($themeId);
 
@@ -57,6 +68,19 @@ class ThemeService
 
         if (!$this->canUserModify($user, $theme)) {
             throw new \Exception('Unauthorized to modify this theme', 403);
+        }
+
+        // Si hay nueva imagen de fondo, subir y reemplazar
+        if ($backgroundImage) {
+            // Eliminar imagen anterior si existe
+            if ($theme->bg_image_media_id) {
+                $this->deleteOldBackgroundImage($theme->bg_image_media_id);
+            }
+            
+            // Subir nueva imagen
+            $media = $this->mediaService->uploadThemeBackgroundImage($backgroundImage, $user->id);
+            $data['bg_image_media_id'] = $media->id;
+            $data['bg_image_url'] = $media->url;
         }
 
         // Remove user_id from update data to prevent modification
@@ -88,6 +112,11 @@ class ThemeService
         // Cannot delete system themes
         if ($theme->isSystemTheme()) {
             throw new \Exception('Cannot delete system themes', 403);
+        }
+
+        // Eliminar imagen de fondo si existe
+        if ($theme->bg_image_media_id) {
+            $this->deleteOldBackgroundImage($theme->bg_image_media_id);
         }
 
         return $this->themeRepository->delete($themeId);
@@ -127,5 +156,32 @@ class ThemeService
         }
 
         return null;
+    }
+
+    /**
+     * Elimina la imagen de fondo anterior del tema
+     * 
+     * @param int $mediaId
+     * @return void
+     */
+    public function deleteOldBackgroundImage(int $mediaId): void
+    {
+        // Obtener el media para conocer el user_id
+        $media = \App\Models\Media::find($mediaId);
+        if ($media) {
+            $this->mediaService->deleteMedia($mediaId, $media->user_id);
+        }
+    }
+
+    /**
+     * Sube una imagen de fondo para el tema
+     * 
+     * @param UploadedFile $file
+     * @param int $userId
+     * @return \App\Models\Media
+     */
+    public function uploadBackgroundImage(UploadedFile $file, int $userId): \App\Models\Media
+    {
+        return $this->mediaService->uploadThemeBackgroundImage($file, $userId);
     }
 }
