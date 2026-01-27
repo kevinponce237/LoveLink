@@ -11,10 +11,8 @@ class UpdateInvitationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Obtener la invitation desde la ruta
         $invitation = $this->route('invitation');
 
-        // Asegurarse de que sea una instancia del modelo Invitation
         if (is_string($invitation)) {
             $invitation = \App\Models\Invitation::find($invitation);
         }
