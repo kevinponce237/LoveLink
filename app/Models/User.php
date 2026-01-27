@@ -67,4 +67,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Invitation::class);
     }
+
+    /**
+     * Relación: Un usuario puede tener múltiples temas personalizados
+     */
+    public function themes(): HasMany
+    {
+        return $this->hasMany(Theme::class);
+    }
 }
