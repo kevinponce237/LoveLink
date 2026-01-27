@@ -5,8 +5,9 @@ namespace App\Services;
 use App\Models\Landing;
 use App\Models\User;
 use App\Repositories\LandingRepository;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Str;
 
 class LandingService
 {
@@ -28,11 +29,11 @@ class LandingService
     public function createLanding(User $user, array $data): Landing
     {
         // Generar slug si no se proporciona
-        if (!isset($data['slug']) || empty($data['slug'])) {
+        if (! isset($data['slug']) || empty($data['slug'])) {
             $data['slug'] = $this->generateUniqueSlug($data['couple_names'], $user->id);
         } else {
             // Validar que el slug sea único para el usuario
-            if (!$this->validateSlugUniqueness($data['slug'], $user->id)) {
+            if (! $this->validateSlugUniqueness($data['slug'], $user->id)) {
                 throw new \InvalidArgumentException('El slug ya existe para este usuario');
             }
         }
@@ -48,18 +49,18 @@ class LandingService
     public function updateLanding(int $id, array $data, User $user): Landing
     {
         $landing = $this->landingRepository->findById($id);
-        
-        if (!$landing) {
-            throw new \ModelNotFoundException('Landing no encontrada');
+
+        if (! $landing) {
+            throw new ModelNotFoundException('Landing no encontrada');
         }
 
         if ($landing->user_id !== $user->id) {
-            throw new \UnauthorizedHttpException('', 'No tienes permisos para actualizar esta landing');
+            throw new \Exception('No tienes permisos para actualizar esta landing', 403);
         }
 
         // Si se actualiza el slug, verificar unicidad
         if (isset($data['slug']) && $data['slug'] !== $landing->slug) {
-            if (!$this->validateSlugUniqueness($data['slug'], $user->id, $id)) {
+            if (! $this->validateSlugUniqueness($data['slug'], $user->id, $id)) {
                 throw new \InvalidArgumentException('El slug ya existe para este usuario');
             }
         }
@@ -73,13 +74,13 @@ class LandingService
     public function deleteLanding(int $id, User $user): bool
     {
         $landing = $this->landingRepository->findById($id);
-        
-        if (!$landing) {
-            throw new \ModelNotFoundException('Landing no encontrada');
+
+        if (! $landing) {
+            throw new ModelNotFoundException('Landing no encontrada');
         }
 
         if ($landing->user_id !== $user->id) {
-            throw new \UnauthorizedHttpException('', 'No tienes permisos para eliminar esta landing');
+            throw new \Exception('No tienes permisos para eliminar esta landing', 403);
         }
 
         return $this->landingRepository->delete($id);
@@ -91,8 +92,8 @@ class LandingService
     public function getLandingById(int $id, User $user): Landing
     {
         $landing = $this->landingRepository->findById($id);
-        
-        if (!$landing) {
+
+        if (! $landing) {
             throw new \ModelNotFoundException('Landing no encontrada');
         }
 
@@ -109,9 +110,9 @@ class LandingService
     public function getLandingBySlugPublic(string $slug): Landing
     {
         $landing = $this->landingRepository->findBySlugPublic($slug);
-        
-        if (!$landing) {
-            throw new \ModelNotFoundException('Landing no encontrada');
+
+        if (! $landing) {
+            throw new ModelNotFoundException('Landing no encontrada');
         }
 
         return $landing;
@@ -123,9 +124,9 @@ class LandingService
     public function getLandingByIdPublic(int $id): Landing
     {
         $landing = $this->landingRepository->findById($id);
-        
-        if (!$landing) {
-            throw new \ModelNotFoundException('Landing no encontrada');
+
+        if (! $landing) {
+            throw new ModelNotFoundException('Landing no encontrada');
         }
 
         return $landing;
@@ -138,16 +139,16 @@ class LandingService
     {
         // Convertir nombres a slug base
         $baseSlug = Str::slug($coupleNames, '-');
-        
+
         // Asegurar que no sea demasiado largo
         $baseSlug = Str::limit($baseSlug, 40, '');
-        
+
         $slug = $baseSlug;
         $counter = 1;
 
         // Verificar unicidad y agregar contador si es necesario
-        while (!$this->validateSlugUniqueness($slug, $userId)) {
-            $slug = $baseSlug . '-' . $counter;
+        while (! $this->validateSlugUniqueness($slug, $userId)) {
+            $slug = $baseSlug.'-'.$counter;
             $counter++;
         }
 
@@ -168,6 +169,7 @@ class LandingService
     public function canUserModifyLanding(int $landingId, int $userId): bool
     {
         $landing = $this->landingRepository->findById($landingId);
+
         return $landing && $landing->user_id === $userId;
     }
 
@@ -185,6 +187,7 @@ class LandingService
     public function validateMediaLimit(int $landingId): bool
     {
         $currentCount = $this->landingRepository->countMediaForLanding($landingId);
+
         return $currentCount < 20; // Límite según especificación
     }
 
@@ -194,12 +197,12 @@ class LandingService
     public function attachMediaToLanding(int $landingId, int $mediaId, int $userId, ?int $sortOrder = null): void
     {
         // Validar permisos del usuario sobre la landing
-        if (!$this->canUserModifyLanding($landingId, $userId)) {
-            throw new \UnauthorizedHttpException('', 'No tienes permisos sobre esta landing');
+        if (! $this->canUserModifyLanding($landingId, $userId)) {
+            throw new \Exception('No tienes permisos sobre esta landing', 403);
         }
 
         // Validar límite de media
-        if (!$this->validateMediaLimit($landingId)) {
+        if (! $this->validateMediaLimit($landingId)) {
             throw new \InvalidArgumentException('Se ha alcanzado el límite máximo de media (20) para esta landing');
         }
 
@@ -217,7 +220,7 @@ class LandingService
     public function detachMediaFromLanding(int $landingId, int $mediaId, int $userId): void
     {
         // Validar permisos del usuario sobre la landing
-        if (!$this->canUserModifyLanding($landingId, $userId)) {
+        if (! $this->canUserModifyLanding($landingId, $userId)) {
             throw new \UnauthorizedHttpException('', 'No tienes permisos sobre esta landing');
         }
 
@@ -230,17 +233,17 @@ class LandingService
     public function reorderLandingMedia(int $landingId, array $mediaOrder, int $userId): void
     {
         // Validar permisos del usuario sobre la landing
-        if (!$this->canUserModifyLanding($landingId, $userId)) {
-            throw new \UnauthorizedHttpException('', 'No tienes permisos sobre esta landing');
+        if (! $this->canUserModifyLanding($landingId, $userId)) {
+            throw new \Exception('No tienes permisos sobre esta landing', 403);
         }
 
         // Validar que todos los media pertenezcan a la landing
         $landing = $this->landingRepository->findById($landingId);
         $landingMediaIds = $landing->media->pluck('id')->toArray();
-        
+
         foreach ($mediaOrder as $item) {
-            if (!in_array($item['media_id'], $landingMediaIds)) {
-                throw new \InvalidArgumentException('El media ' . $item['media_id'] . ' no pertenece a esta landing');
+            if (! in_array($item['media_id'], $landingMediaIds)) {
+                throw new \InvalidArgumentException('El media '.$item['media_id'].' no pertenece a esta landing');
             }
         }
 

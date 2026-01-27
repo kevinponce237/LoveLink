@@ -24,10 +24,10 @@ class LandingMediaController extends Controller
     {
         try {
             // Verificar que el usuario es propietario del media
-            if (!$this->mediaService->validateUserOwnership($request->media_id, $request->user()->id)) {
+            if (! $this->mediaService->validateUserOwnership($request->media_id, $request->user()->id)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tienes permisos sobre este media.'
+                    'message' => 'No tienes permisos sobre este media.',
                 ], 403);
             }
 
@@ -40,22 +40,26 @@ class LandingMediaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Media vinculado a la landing exitosamente.'
+                'message' => 'Media vinculado a la landing exitosamente.',
             ], 201);
-        } catch (\UnauthorizedHttpException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos sobre esta landing.'
-            ], 403);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
         } catch (\Exception $e) {
+            if ($e->getCode() === 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos sobre esta landing.',
+                ], 403);
+            }
+
+            if ($e instanceof \InvalidArgumentException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al vincular media: ' . $e->getMessage()
+                'message' => 'Error al vincular media: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -74,17 +78,19 @@ class LandingMediaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Media desvinculado de la landing exitosamente.'
+                'message' => 'Media desvinculado de la landing exitosamente.',
             ]);
-        } catch (\UnauthorizedHttpException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos sobre esta landing.'
-            ], 403);
         } catch (\Exception $e) {
+            if ($e->getCode() === 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos sobre esta landing.',
+                ], 403);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al desvincular media: ' . $e->getMessage()
+                'message' => 'Error al desvincular media: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -103,22 +109,26 @@ class LandingMediaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Media reordenado exitosamente.'
+                'message' => 'Media reordenado exitosamente.',
             ]);
-        } catch (\UnauthorizedHttpException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos sobre esta landing.'
-            ], 403);
-        } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
         } catch (\Exception $e) {
+            if ($e->getCode() === 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permisos sobre esta landing.',
+                ], 403);
+            }
+
+            if ($e instanceof \InvalidArgumentException) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al reordenar media: ' . $e->getMessage()
+                'message' => 'Error al reordenar media: '.$e->getMessage(),
             ], 500);
         }
     }

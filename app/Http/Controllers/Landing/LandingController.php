@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Landing\StoreLandingRequest;
 use App\Http\Requests\Landing\UpdateLandingRequest;
 use App\Services\LandingService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,16 +23,16 @@ class LandingController extends Controller
     {
         try {
             $landings = $this->landingService->getUserLandings($request->user()->id);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $landings,
-                'message' => 'Landings obtenidas exitosamente.'
+                'message' => 'Landings obtenidas exitosamente.',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener las landings: ' . $e->getMessage()
+                'message' => 'Error al obtener las landings: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -43,30 +44,30 @@ class LandingController extends Controller
     {
         try {
             $landing = $this->landingService->createLanding(
-                $request->user(), 
+                $request->user(),
                 $request->validated()
             );
 
             return response()->json([
                 'success' => true,
                 'data' => $landing->load(['theme', 'media']),
-                'message' => 'Landing creada exitosamente.'
+                'message' => 'Landing creada exitosamente.',
             ], 201);
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al crear la landing: ' . $e->getMessage()
+                'message' => 'Error al crear la landing: '.$e->getMessage(),
             ], 500);
         }
     }
 
     /**
-     * Muestra una landing específica 
+     * Muestra una landing específica
      * Si recibe un ID numérico, lo trata como ID de la landing (PÚBLICO)
      * Si recibe una string, lo trata como slug (PÚBLICO)
      */
@@ -83,17 +84,17 @@ class LandingController extends Controller
             return response()->json([
                 'success' => true,
                 'data' => $landing,
-                'message' => 'Landing obtenida exitosamente.'
+                'message' => 'Landing obtenida exitosamente.',
             ]);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Landing no encontrada.'
+                'message' => 'Landing no encontrada.',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener la landing: ' . $e->getMessage()
+                'message' => 'Error al obtener la landing: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -105,35 +106,37 @@ class LandingController extends Controller
     {
         try {
             $landing = $this->landingService->updateLanding(
-                $id, 
-                $request->validated(), 
+                $id,
+                $request->validated(),
                 $request->user()
             );
 
             return response()->json([
                 'success' => true,
                 'data' => $landing,
-                'message' => 'Landing actualizada exitosamente.'
+                'message' => 'Landing actualizada exitosamente.',
             ]);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Landing no encontrada.'
+                'message' => 'Landing no encontrada.',
             ], 404);
-        } catch (\UnauthorizedHttpException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos para actualizar esta landing.'
-            ], 403);
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 422);
         } catch (\Exception $e) {
+            if ($e->getCode() == 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 403);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar la landing: ' . $e->getMessage()
+                'message' => 'Error al actualizar la landing: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -149,28 +152,30 @@ class LandingController extends Controller
             if ($success) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Landing eliminada exitosamente.'
+                    'message' => 'Landing eliminada exitosamente.',
                 ]);
             }
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar la landing.'
+                'message' => 'Error al eliminar la landing.',
             ], 500);
-        } catch (\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Landing no encontrada.'
+                'message' => 'Landing no encontrada.',
             ], 404);
-        } catch (\UnauthorizedHttpException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permisos para eliminar esta landing.'
-            ], 403);
         } catch (\Exception $e) {
+            if ($e->getCode() == 403) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 403);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al eliminar la landing: ' . $e->getMessage()
+                'message' => 'Error al eliminar la landing: '.$e->getMessage(),
             ], 500);
         }
     }
